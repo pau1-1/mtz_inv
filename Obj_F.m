@@ -1,28 +1,54 @@
-function[F, gradF]= Obj_F(sig, PSO, MTZ_new_1D, borders, Params)
-d = length(sig);%dimensions
-A = diag(sig);
-a = 1;
-eps = 1;
+function[costFunction, gradF]= Obj_F(sig, bestSolution, MTZ_new_1D, bestFunction)
+
+%% NES Parameters
+d = length(sig); % dimension of target vector
+sig = diag(diag(sig));
+A = sqrtm(sig);
+% Cov = diag(sig.^2); % Covariance
+Cov = sig;
+logCov = diag(log(diag(sig))); % log Covariance for objective function
+a = 1000; % max function multiplier
+eps = 1.01; % difference coef
 n = round(4+3*log(d)); %number of samples fron MC
-x_rand = zeros(n, d);
-[bestSolution,~,~] = PSO(MTZ_new_1D, borders, Params);
-bs = MTZ_new_1D(bestSolution.xbest);
-E = 0; %expected value of mean from MC samples
-for i =1:n
-    z = randn(1,5);
-    x_rand(i, :) = bestSolution.xbest + z*A;
-    E = E + MTZ_new_1D(x_rand(i, :))/n;
-end;
-F = log(trace(A))+ a*(max(0, E-eps*bs))^2; %objective function
-dP = 2*a*max(0, E - eps*bs); %dP/dE, where P is the Penaulty function
-dE = zeros(1, d); %dE/dsig, where sig is diagonal elements of matrix A
-gradF = zeros(1, d); %gradient of objective function
-for i= 1:d
-    for j = 1:n
-        x = x_rand(j,:);
-        dE(i) = dE(i) - MTZ_new_1D(x_rand(j, :))*(1/2/(sig(i)+1e-8) + sig(i)*(x_rand(j, d-i+1)-bestSolution.xbest(i))^2/(prod(sig)^2+1e-8) + norm((x(end:-1:1) - bestSolution.xbest(end:-1:1))*A)^2/(sig(i)*prod(sig)^2+1e-8))/n; % dE/dsig(i)
-    end;
-    gradF(i) = 3/2/(sig(i)+1e-8) + dP*dE(i);
-end;
-gradF = -gradF;
+%% Calculating CostFunction
+xbest = bestSolution.xbest';
+fit = zeros(1,n);
+Z = randn(d, n);% 
+X = repmat(xbest,1,n);
+% E = 0; %expected value of mean from MC samples
+% U = expm(A)*Z;
+U = A*Z;
+X = X + U;
+
+for i = 1 : n
+    fit(i) = MTZ_new_1D(X(:,i));
+end
+
+MeanFit = mean(fit);
+costFunction = trace(logCov)+ a*(max(0, MeanFit-eps*bestFunction))^2 %objective function
+% costFunction = costFunction
+
+%% Calculating gradient
+dV = inv(Cov);
+
+dP = 2*a*max(0, MeanFit - eps*bestFunction); %dP/dE, where P is the Penaulty function
+
+
+% dE = zeros(1, d); %dE/dsig, where sig is diagonal elements of matrix A
+% gradF = zeros(1, d); %gradient of objective function
+
+M = dV;
+
+% Zdif = X - repmat(bestSolution.xbest',1,n);
+dE = zeros(d);
+for i = 1 : n
+    dE = dE + fit(i) * (0.5 * M * ( X(:,i) - xbest )*( X(:,i) - xbest)' * M - 0.5 * M);
+end
+
+dE = dE / n;
+
+gradF = dV + dP*dE;
+
+% gradF = diag(diag(gradF));
+
 end
