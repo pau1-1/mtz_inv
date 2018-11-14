@@ -23,4 +23,5 @@ for i= 1:d
     end;
     gradF(i) = 3/2/A(i,i) + dP*dE(i);
 end;
+gradF = -gradF;
 end
