@@ -1,4 +1,4 @@
-function[costFunction, gradF, cost2]= Obj_F(sig, bestSolution, MTZ_new_1D, bestFunction)
+function[costFunction, gradF, cost2]= Obj_F(sig, bestSolution, MTZ_new_1D, bestFunction,rr_true, sqT)
 
 %% NES Parameters
 d = length(sig); % dimension of target vector
@@ -19,7 +19,7 @@ U = A*Z;
 X = X + U;
 
 for i = 1 : n
-    fit(i) = MTZ_new_1D(X(:,i));
+    [fit(i), ~] = MTZ_new_1D(X(:,i), rr_true, sqT);
 end
 
 MeanFit = mean(fit);

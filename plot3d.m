@@ -7,11 +7,11 @@ sigmax = max(SigmaL);
 x = [xmin-sigmax:1:xmax+sigmax];
 
 norm = zeros(length(x), length(sig_best));
-for i=1:5
+for i=1:length(x_true)
     norm(:,i) = normpdf(x,xbest(i),SigmaL(i));
 end
 
-zprog = [10:10:50];
+zprog = [10:10:(length(x_true)*10)];
 zbig = repmat(zprog, [length(norm),1]);
 
 
