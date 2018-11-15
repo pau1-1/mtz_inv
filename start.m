@@ -1,4 +1,4 @@
-clc
+clear all;
 tic
 %%
 Params.NOD = 5; % number of dimensions
@@ -16,38 +16,35 @@ borders.max = 1000*ones(1, Params.NOD);
 borders.Vmax = zeros(1, Params.NOD);
 %%
 [bestSolution, ~, ~] = PSO(@MTZ_new_1D, borders, Params);
+xbest = bestSolution.xbest;
 bestFunction = MTZ_new_1D(bestSolution.xbest);
-% sig0 = [1000 200 400 100 500];
-sig0 = [10 20 40 10 50];
-sig0 = diag(sig0);
+sig0 = 0.1 * eye(5);
 call = 0;
-step0 = 20; %gradient step
-% step0 = 0.5*min(1.0/d,0.25);
+step0 = 10; %gradient step
 sig_prev = sig0;
-toc
-tic
-[obj_prev, grad] = Obj_F(sig_prev, bestSolution, @MTZ_new_1D, bestFunction);
-toc
+[obj_best, grad_prev, cost2] = Obj_F(sig_prev, bestSolution, @MTZ_new_1D, bestFunction);
 step = step0;
-sig_new = ones(size(sig_prev));
-% while step > 1e-8
-% tic
-% while obj > 1e-8
-while norm(sig_new - sig_prev) > 1e-8
-%     disp('hey')
-    sig_new = sig_prev + step*grad;
-%     obj_prev = obj;
-    tic
-    [obj, grad] = Obj_F(sig_new, bestSolution, @MTZ_new_1D, bestFunction);
-    toc
-    if obj > obj_prev
+sig_new = zeros(size(sig_prev));
+max_call = 1000;
+while call < max_call
+    sig_new = sig_prev + step*grad_prev;
+    [obj_new, grad_new, cost2] = Obj_F(sig_new, bestSolution, @MTZ_new_1D, bestFunction);
+    
+    if norm(sig_new - sig_prev) < 1e-8
+        disp('gain is less than 1e-8')
+        break
+    end
+    
+    if obj_new > obj_best
+        obj_best = obj_new;
+        grad_prev = grad_new;
         sig_prev = sig_new;
-        obj_prev = obj;
-        call = call + 1;
+        sig_best = sig_new;
+        cost_glob = cost2;
         step = step0;
     else
         step = step/2;
-%         obj = obj_prev;
+    call = call + 1;
     end;
 end;
 % toc
