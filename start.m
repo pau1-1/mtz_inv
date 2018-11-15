@@ -22,13 +22,13 @@ sig0 = 0.1 * eye(5);
 call = 0;
 step0 = 10; %gradient step
 sig_prev = sig0;
-[obj_best, grad_prev] = Obj_F(sig_prev, bestSolution, @MTZ_new_1D, bestFunction);
+[obj_best, grad_prev, cost2] = Obj_F(sig_prev, bestSolution, @MTZ_new_1D, bestFunction);
 step = step0;
 sig_new = zeros(size(sig_prev));
-max_call = 100;
+max_call = 1000;
 while call < max_call
     sig_new = sig_prev + step*grad_prev;
-    [obj_new, grad_new] = Obj_F(sig_new, bestSolution, @MTZ_new_1D, bestFunction);
+    [obj_new, grad_new, cost2] = Obj_F(sig_new, bestSolution, @MTZ_new_1D, bestFunction);
     
     if norm(sig_new - sig_prev) < 1e-8
         disp('gain is less than 1e-8')
@@ -40,6 +40,7 @@ while call < max_call
         grad_prev = grad_new;
         sig_prev = sig_new;
         sig_best = sig_new;
+        cost_glob = cost2;
         step = step0;
     else
         step = step/2;

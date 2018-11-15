@@ -1,4 +1,4 @@
-function[costFunction, gradF]= Obj_F(sig, bestSolution, MTZ_new_1D, bestFunction)
+function[costFunction, gradF, cost2]= Obj_F(sig, bestSolution, MTZ_new_1D, bestFunction)
 
 %% NES Parameters
 d = length(sig); % dimension of target vector
@@ -24,9 +24,9 @@ end
 
 MeanFit = mean(fit);
 first = trace(logCov);
-second = a*(max(0, MeanFit-eps*bestFunction))^2;
-costFunction = first - second; %objective function
-
+second = (max(0, MeanFit-eps*bestFunction))^2;
+costFunction = first - a * second; %objective function
+cost2 = second;
 %% Calculating gradient
 dV = inv(Cov);
 dP = 2*a*max(0, MeanFit - eps*bestFunction); %dP/dE, where P is the Penaulty function
