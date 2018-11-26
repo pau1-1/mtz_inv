@@ -7,7 +7,7 @@ A = sqrtm(sig);
 Cov = sig;
 logCov = log(Cov); % log Covariance for objective function
 
-eps = 1; % difference coef
+eps = 1.01; % difference coef
 n = round(4+3*log(d)); %number of samples fron MC
 %% Calculating CostFunction
 xbest = bestSolution.xbest';
@@ -25,7 +25,7 @@ end
 MeanFit = mean(fit);
 first = trace(logCov);
 second = (max(0, MeanFit-eps*bestFunction))^2;
-costFunction = first - a * second; %objective function
+costFunction = first + a * second; %objective function
 cost2 = second;
 %% Calculating gradient
 dV = inv(Cov);
