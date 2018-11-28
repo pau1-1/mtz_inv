@@ -1,4 +1,4 @@
-function [bestSolution, Calls, Graph] = PSO(BlackBox, borders, Params, rr_true, sqT)
+function [bestSolution, Calls, Graph] = PSO(BlackBox, borders, Params)
 %% Particle Swarm Optimization Algorithm
 
 %% Optimization parameters
@@ -44,7 +44,7 @@ for i=1:NOP
     Swarm(i).xbest = x0;
     Swarm(i).v = ( Vmax + Vstart*(bordmin-bordmax).*(Vmax==0) ).*(rand(1,NOD) - 0.5)*2;
     
-    [ObjF, g] = BlackBox(x0, rr_true, sqT);
+    [ObjF, g] = BlackBox(x0);
     calls = calls + 1;
     
     Swarm(i).g = g;
@@ -85,10 +85,9 @@ while calls<callsMax
     
     %-------- position update --------%
     for i=1:NOP
-        [Swarm, calls] = updatePosition(Swarm, i, BlackBox, calls, bordmin, bordmax, BC_v, rr_true, sqT);
+        [Swarm, calls] = updatePosition(Swarm, i, BlackBox, calls, bordmin, bordmax, BC_v);
     end
 
-    
     %-------- графики --------%
     Calls(t) = calls;
     [bestObjF, ~] = findBestParticle(Swarm);

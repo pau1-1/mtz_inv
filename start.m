@@ -1,16 +1,22 @@
-clear all;
-x_true = [300 50 600 100 1000 300 600];
-tic
+clear variables
 %%
+% Using PSO to find a good solution xbest
+% Then starting NES algorithm to estimate the correction for xbest and sigmas
+%%
+x_true = [300 50 600 100 1000 300 600];
+disp(['True solution: ', num2str(x_true, '%-9.1f')]);
+
 Params.NOD = length(x_true); % number of dimensions
 Params.callsMax = 1e4; % number of calls
-Params.w = 0.7298; % inertia coefficient, 0.7298
-Params.c1 = 1.4962; % cognitive direction multiplier, 1.4962
-Params.c2 = 1.4962; % social direction multiplier, 1.4962
-Params.BC_v = -0.5; % boundary conditions for v: 0 - adhesion, -1 - reflecting, ...
-Params.NOP = 20; % number of particles
-Params.NON = 1; % number of neighborhoods
-Params.Vstart = 0; % max value of initial velocity / (bordmax-bordmin)
+
+PSOParams = Params;
+PSOParams.w = 0.7298; % inertia coefficient, 0.7298
+PSOParams.c1 = 1.4962; % cognitive direction multiplier, 1.4962
+PSOParams.c2 = 1.4962; % social direction multiplier, 1.4962
+PSOParams.BC_v = -0.5; % boundary conditions for v: 0 - adhesion, -1 - reflecting, ...
+PSOParams.NOP = 20; % number of particles
+PSOParams.NON = 1; % number of neighborhoods
+PSOParams.Vstart = 0; % max value of initial velocity / (bordmax-bordmin)
 %%
 borders.min = 10*ones(1, Params.NOD);
 borders.max = 1000*ones(1, Params.NOD);
@@ -23,37 +29,22 @@ for i = 2:lT
     sqT(i) = sqT(i-1)*1.1;
 end
 rr_true = MTZ(x_true, sqT);
-[bestSolution, ~, ~] = PSO(@MTZ_new_1D, borders, Params, rr_true, sqT);
-xbest = bestSolution.xbest;
-bestFunction = MTZ_new_1D(bestSolution.xbest, rr_true, sqT);
-sig0 = 0.1 * eye(length(x_true));
-call = 0;
-step0 = 10; %gradient step
-sig_prev = sig0;
-[obj_best, grad_prev, cost2] = Obj_F(sig_prev, bestSolution, @MTZ_new_1D, bestFunction, rr_true, sqT);
-step = step0;
-sig_new = zeros(size(sig_prev));
-max_call = 1000;
-while call < max_call
-    sig_new = sig_prev + step*grad_prev;
-    [obj_new, grad_new, cost2] = Obj_F(sig_new, bestSolution, @MTZ_new_1D, bestFunction, rr_true, sqT);;
-    
-    if norm(sig_new - sig_prev) < 1e-8
-        disp('gain is less than 1e-8')
-        break
-    end
-    
-    if obj_new > obj_best
-        obj_best = obj_new;
-        grad_prev = grad_new;
-        sig_prev = sig_new;
-        sig_best = sig_new;
-        cost_glob = cost2;
-        step = step0;
-    else
-        step = step/2;
-    call = call + 1;
-    end;
-end;
-% toc
-%     
+
+%%
+MTZ_blackbox = @(x) MTZ_new_1D(x, rr_true, sqT);
+[bestSolutionPSO, ~, ~] = PSO(MTZ_blackbox, borders, PSOParams);
+xbest = bestSolutionPSO.xbest;
+ObjFbest = bestSolutionPSO.ObjFbest;
+disp(['PSO  solution: ', num2str(xbest, '%-9.1f')])
+disp(['Objective function = ', num2str(ObjFbest)])
+%%
+disp('Now using this solution as mean for SNES');
+
+SNESParams = Params;
+SNESParams.mean = xbest;
+SNESParams.learn_rates = [1, 3];
+SNES_blackbox = @(x) max(0,abs(MTZ_blackbox(x)-ObjFbest)-1e-1);
+[bestSolutionSNES, CallsSNES, GraphSNES] = SNES(SNES_blackbox, borders, SNESParams);
+
+disp(['SNES solution: ', num2str(bestSolutionSNES.xbest, '%-9.1f')])
+disp(['Final variance: ', num2str(bestSolutionSNES.var, '%-9.1f')])
